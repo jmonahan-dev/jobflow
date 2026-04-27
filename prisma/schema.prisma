@@ -1,0 +1,98 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Business {
+  id        String   @id @default(uuid())
+  name      String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  profiles  Profile[]
+  customers Customer[]
+  jobs      Job[]
+
+  @@map("businesses")
+}
+
+model Profile {
+  id         String   @id @default(uuid())
+  authUserId String   @unique @map("auth_user_id")
+  businessId String   @map("business_id")
+  fullName   String   @map("full_name")
+  email      String
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  business   Business  @relation(fields: [businessId], references: [id])
+  jobNotes   JobNote[]
+
+  @@map("profiles")
+}
+
+model Customer {
+  id         String   @id @default(uuid())
+  businessId String   @map("business_id")
+  name       String
+  phone      String?
+  email      String?
+  address    String?
+  notes      String?
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  business   Business @relation(fields: [businessId], references: [id])
+  jobs       Job[]
+
+  @@map("customers")
+}
+
+model Job {
+  id            String    @id @default(uuid())
+  businessId    String    @map("business_id")
+  customerId    String    @map("customer_id")
+  title         String
+  description   String?
+  scheduledDate DateTime? @map("scheduled_date")
+  scheduledTime String?   @map("scheduled_time")
+  location      String?
+  price         Decimal?  @db.Decimal(10, 2)
+  status        JobStatus @default(NEW_LEAD)
+  isPaid        Boolean   @default(false) @map("is_paid")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  business      Business  @relation(fields: [businessId], references: [id])
+  customer      Customer  @relation(fields: [customerId], references: [id])
+  jobNotes      JobNote[]
+
+  @@map("jobs")
+}
+
+model JobNote {
+  id        String   @id @default(uuid())
+  jobId     String   @map("job_id")
+  profileId String   @map("profile_id")
+  note      String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  job       Job      @relation(fields: [jobId], references: [id])
+  profile   Profile  @relation(fields: [profileId], references: [id])
+
+  @@map("job_notes")
+}
+
+enum JobStatus {
+  NEW_LEAD
+  CONTACTED
+  QUOTE_SENT
+  BOOKED
+  IN_PROGRESS
+  COMPLETED
+  PAID
+  CANCELLED
+}
